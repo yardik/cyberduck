@@ -16,70 +16,43 @@
 // feedback@cyberduck.io
 // 
 
-using System;
-using System.Runtime.InteropServices;
 using ch.cyberduck.core.local;
+using Windows.Win32.UI.Shell;
+using static Windows.Win32.CorePInvoke;
 
 namespace Ch.Cyberduck.Core.Local
 {
     public sealed class ExplorerRevealService : RevealService
     {
-        public bool reveal(ch.cyberduck.core.Local l, bool select)
+        public unsafe bool reveal(ch.cyberduck.core.Local l, bool select)
         {
-            if (select)
+            if (!select)
             {
-                IntPtr nativeFolder = IntPtr.Zero;
-                try
-                {
-                    uint psfgaoOut;
-                    NativeMethods.SHParseDisplayName(l.getParent().getAbsolute(), IntPtr.Zero, out nativeFolder, 0,
-                        out psfgaoOut);
-
-                    if (nativeFolder == IntPtr.Zero)
-                    {
-                        return false;
-                    }
-
-                    IntPtr nativeFile = IntPtr.Zero;
-                    try
-                    {
-                        NativeMethods.SHParseDisplayName(l.getAbsolute(), IntPtr.Zero, out nativeFile, 0,
-                            out psfgaoOut);
-
-                        IntPtr[] fileArray;
-                        if (nativeFile != IntPtr.Zero)
-                        {
-                            fileArray = new IntPtr[] {nativeFile};
-                        }
-                        else
-                        {
-                            fileArray = new IntPtr[] { };
-                        }
-
-                        // Opens a Windows Explorer window with specified items in a particular folder selected.
-                        NativeMethods.SHOpenFolderAndSelectItems(nativeFolder, (uint) fileArray.Length, fileArray, 0);
-                    }
-                    finally
-                    {
-                        if (nativeFile != IntPtr.Zero)
-                        {
-                            Marshal.FreeCoTaskMem(nativeFile);
-                        }
-                    }
-                }
-                finally
-                {
-                    if (nativeFolder != IntPtr.Zero)
-                    {
-                        Marshal.FreeCoTaskMem(nativeFolder);
-                    }
-                }
+                return ApplicationLauncherFactory.get().open(l);
             }
-            else
+            
+            using PIDLIST_ABSOLUTEHandle nativeFolder = new();
+            SHParseDisplayName(l.getParent().getAbsolute(), null, out nativeFolder.Put(), 0, out _);
+            if (!nativeFolder)
             {
-                ApplicationLauncherFactory.get().open(l);
+                return false;
             }
 
+            using PIDLIST_ABSOLUTEHandle nativeFile = new();
+            SHParseDisplayName(l.getAbsolute(), null, out nativeFile.Put(), 0, out _);
+            if (!nativeFile)
+            {
+                return false;
+            }
+
+            uint count = 0;
+            ITEMIDLIST* target = default;
+            if (nativeFile)
+            {
+                count = 1;
+                target = nativeFile.Get();
+            }
+            SHOpenFolderAndSelectItems(nativeFolder.Value, count, &target, 0);
             return true;
         }
 
