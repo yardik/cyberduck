@@ -2,8 +2,9 @@
 
 namespace Windows.Win32
 {
-    partial class CorePInvoke
+    public partial class CorePInvoke
     {
+        /// <inheritdoc cref="CredRead(Foundation.PCWSTR, uint, uint, CREDENTIALW**)"/>
         public static unsafe bool CredRead(string TargetName, CRED_TYPE type, CRED_FLAGS flags, out CREDENTIALW* credential)
         {
             fixed (CREDENTIALW** credentialLocal = &credential)
