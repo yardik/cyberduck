@@ -32,7 +32,6 @@ SetWindowLong
 SetWindowPos
 SetWindowPos
 SetWindowText
-SHFILEINFO
 SHGetFileInfo
 SHGFI_FLAGS
 SHOpenFolderAndSelectItems
